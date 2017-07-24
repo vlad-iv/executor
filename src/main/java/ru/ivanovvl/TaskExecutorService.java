@@ -6,15 +6,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Реализация очереди задач с относительным порядком:
  * 1. задания с разными значениями ключа могут выполняться параллельно
  * 2. задания с одинаковыми значениями ключа выполняются последовательно и в порядке поступления в очередь
  *
- * Следует понимать, что в худшем случае половина потоков будет ожидать окончания выполнения
- * задач с одинаковым ключем.
+ * Следует понимать, что в худшем случае когда подряд приходит N задач с одинаковым ключем,
+ * N-1 поток будет ожидать окончания выполнения первой задачи.
  *
  * @author Vladimir Ivanov (ivanov.vladimir.l@gmail.com)
  * @version $Id$
@@ -31,7 +30,7 @@ public class TaskExecutorService implements TaskExecutor {
     public void submit(final Task task) {
         final Future<?> future = keyInProgress.compute(task.getKey(),
             (key, prevTask) -> {
-                if (prevTask == null) { // Задача с таким ключем не исполняется
+                if (prevTask == null) {
                     return executor.submit(() -> {
                         try {
                             task.run();
